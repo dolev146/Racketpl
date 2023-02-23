@@ -42,8 +42,6 @@
        [(list 'fun (list (symbol: name )) body)
        (Fun name (parse-expr body))]
        [else (error 'parse-expr "bard 'fun syntax in ~s" exp)]
-       
-
          )
 
      ]
