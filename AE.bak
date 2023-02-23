@@ -1,0 +1,110 @@
+#lang pl
+
+
+
+(define-type Animal
+  [Snake Symbol Number Symbol]
+  [Tiger Symbol Number]
+  )
+
+
+
+(define miz (Tiger 'miz 6))
+
+
+
+(define-type AE
+  [Num Number]
+  [Add AE AE]
+  [Sub AE AE]
+  )
+
+#|
+(: parse-expr : Sexpr -> AE)
+(define (parse-expr exp)
+  (cond 
+        [(number? exp) (Num exp)]
+        [(and (list? exp) (equal? (length exp) 3) (equal? (first exp) '+))
+         (Add (parse-expr (second exp)) (parse-expr (third exp))    )
+         ]
+        [(and (list? exp) (equal? (length exp) 3) (equal? (first exp) '-)  )
+
+         (Sub (parse-expr (second exp)) (parse-expr (third exp))   )
+
+
+         ]
+        
+        [else (Num 99)]
+        )
+  )
+
+|#
+
+(: parse-expr : Sexpr -> AE)
+(define (parse-expr exp)
+  (match exp
+        [(number: exp) (Num exp)]
+    
+        [(list '+ l r) (Add (parse-expr l) (parse-expr r))]
+        [(list '- l r)(Sub (parse-expr l) (parse-expr r))]
+        [else (error 'parse-sexpr "bad syntax in ~s" exp)]
+        )
+  )
+
+
+(: parse : String -> AE)
+(define (parse code)
+  (parse-expr (string->sexpr code))
+)
+
+
+
+
+(: eval : AE -> Number)
+(define (eval expr)
+  (cases expr
+    [(Num expr) expr]
+    [(Add l r) (+ (eval l) (eval r))]
+    [(Sub l r) (- (eval l) (eval r))]
+    )
+  )
+
+
+
+
+
+
+
+(: run : String -> Number)
+(define (run expr)
+  (eval (parse expr))
+  )
+
+
+(test (run "3") => 3)
+(test (run "{ + 3 4 }") => 7)
+(test (run "{ - { + 3 4 } 6 }") => 1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
