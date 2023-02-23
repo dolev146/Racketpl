@@ -73,47 +73,47 @@
   
 
 
-(define-type ENV
-  [EmptyEnv]
-  [Extend Symbol VAL ENV]
+#|
+(: lookup : Symbol SubstCache -> FLANG)
+(define (lookup id sc)
+  (if (null? sc) (error 'lookuperror "problem")
+      (if (eq? (first (first sc)) id) (second (first sc)) (lookup id (rest sc)))
+      )
+  )
+|#
+
+
+(: lookup : Symbol SubstCache -> FLANG)
+(define (lookup id sc)
+  (let ([key (assq id sc)])
+    (if key (second key)
+        (error 'lookup "poblem lookup ~s" id)
+
+        )
+
+
+    )
   )
 
-
-(define-type VAL
-  [NumV Number]
-  [FunV Symbol FLANG ENV]
-  )
+;;(if (null? sc) (error 'lookuperror "problem")
+;;  (if (eq? (first (first sc)) id) (second (first sc)) (lookup id (rest sc)))
+;; )
 
 
 
 
-(: lookup : Symbol ENV -> VAL)
-(define (lookup name env)
-  (cases env
-    [(EmptyEnv) (error 'lookup "no binding for ~s" name)]
-    [(Extend id val rest-env)
-     (if (eq? id name) val (lookup name rest-env))
 
-     ]
-    
-
-   )
-  )
-
-
-
-
-(: arith-op : (Number Number -> Number) VAL VAL -> VAL)
+(: arith-op : (Number Number -> Number) FLANG FLANG -> FLANG)
 (define (arith-op op expr1 expr2)
-  (: Num->number : VAL -> Number )
+  (: Num->number : FLANG -> Number )
   (define (Num->number e)
     (cases e
-      [(NumV n) n]
+      [(Num n) n]
       [else (error 'arithop "exprects a number got: ~s" e)]
 
       )
     )
-(NumV (op (Num->number expr1) (Num->number expr2)))
+(Num (op (Num->number expr1) (Num->number expr2)))
 
   )
 
@@ -123,23 +123,23 @@
 
 
 
-(: eval : FLANG ENV -> VAL)
-(define (eval expr env)
+(: eval : FLANG SubstCache -> FLANG)
+(define (eval expr sc)
 (cases expr
-[(Num n) (NumV n)]
-[(Add l r) (arith-op + (eval l env) (eval r env))]
-[(Sub l r) (arith-op - (eval l env) (eval r env))]
-[(Mul l r) (arith-op * (eval l env) (eval r env))]
-[(Div l r) (arith-op / (eval l env) (eval r env))]
-[(Id name) (lookup name env)]
+[(Num n) expr]
+[(Add l r) (arith-op + (eval l sc) (eval r sc))]
+[(Sub l r) (arith-op - (eval l sc) (eval r sc))]
+[(Mul l r) (arith-op * (eval l sc) (eval r sc))]
+[(Div l r) (arith-op / (eval l sc) (eval r sc))]
+[(Id name) (lookup name sc)]
 [(With bound-id named-expr bound-body)
-(eval bound-body (Extend bound-id (eval named-expr env) env))]
-[(Fun name body) (FunV name body env)]
+(eval bound-body (extend bound-id (eval named-expr sc) sc))]
+[(Fun name body) expr]
 [(Call fun-e arg-e)
- (let ([funv (eval fun-e env)])
+ (let ([funv (eval fun-e sc)])
    (cases funv
-     [(FunV name body f-env)
-      (eval body (Extend name (eval arg-e env) f-env))
+     [(Fun name body)
+      (eval body (extend name (eval arg-e sc) sc))
       ]
      [else (error 'eval "invalid fun ~s" expr)]
      
@@ -159,9 +159,9 @@
 
 (: run : String -> Number)
 (define (run expr)
-  (let ([res (eval (parse expr) (EmptyEnv) )])
+  (let ([res (eval (parse expr) empty-subst)])
     (cases res
-      [(NumV n) n]
+      [(Num n) n]
       [else (error 'run "not valid res ~s" expr)]
       )
     )
